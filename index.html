@@ -11,6 +11,7 @@
     --gold:#e8c074;--cream:#eef3f6;--para:#9fb1bf;--bad:#ff6b6b;--amber:#e8c074;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:20px}
   html,body{margin:0}
   body{
     background:
@@ -23,8 +24,11 @@
   }
   a{color:var(--proof);text-decoration:none}
   a:hover{text-decoration:underline}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--proof);outline-offset:4px}
+  .skip{position:fixed;z-index:20;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));padding:10px 13px;background:var(--proof);color:var(--bg);font:600 12px ui-monospace,monospace;transform:translateY(-180%);transition:transform .2s}
+  .skip:focus{transform:none}
   header{
-    padding:16px 20px;border-bottom:1px solid var(--line);
+    padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 16px max(20px,env(safe-area-inset-left));border-bottom:1px solid var(--line);
     background:linear-gradient(180deg,#08101a,#05070d);
     display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
   }
@@ -40,7 +44,7 @@
   #verdict.ok{border-color:var(--proof);color:var(--proof);text-shadow:0 0 10px rgba(58,244,200,.5);box-shadow:0 0 22px rgba(58,244,200,.12) inset}
   #verdict.bad{border-color:var(--bad);color:var(--bad)}
   #verdict.warn{border-color:var(--amber);color:var(--amber)}
-  main{max-width:1080px;margin:0 auto;padding:20px}
+  main{max-width:1080px;margin:0 auto;padding:20px max(20px,env(safe-area-inset-right)) 20px max(20px,env(safe-area-inset-left))}
   .lead{color:var(--para);font-size:13px;margin:2px 0 18px}
   .lead b{color:var(--cream)}
   .stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
@@ -86,25 +90,40 @@
     padding:14px 16px;margin:20px 0;color:var(--para);font-size:12.5px
   }
   .panel-note b{color:var(--cream)}
+  .identity{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin:0 0 18px}
+  .identity>div,.path{border:1px solid var(--line);border-radius:11px;background:#08111a;padding:15px}
+  .identity h2,.path h2{margin:0 0 7px;font-size:13px}
+  .identity p,.path p{margin:0;color:var(--para);font-size:12px}
+  .identity dl{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font:10.5px/1.5 ui-monospace,monospace}
+  .identity dt{color:var(--para)}.identity dd{margin:0;color:var(--cream);overflow-wrap:anywhere}
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+  .path a{display:inline-flex;align-items:center;min-height:44px;margin-top:8px}
+  .refresh{min-height:44px;padding:8px 13px;border:1px solid var(--proof);border-radius:8px;background:#08111a;color:var(--proof);font:600 11px ui-monospace,monospace;cursor:pointer}
   .unavailable{
     border:1px solid var(--amber);border-radius:14px;background:#140f06;
     padding:20px;color:var(--amber);font-size:13px;line-height:1.6
   }
   .unavailable b{color:var(--cream)}
   footer{
-    max-width:1080px;margin:0 auto;padding:18px 20px 40px;color:var(--para);
+    max-width:1080px;margin:0 auto;padding:18px max(20px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));color:var(--para);
     font:11px ui-monospace,monospace;border-top:1px solid var(--line);letter-spacing:.3px
   }
   code{background:#08111a;border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--cream)}
+  @media(max-width:640px){.identity,.paths{grid-template-columns:1fr}header{align-items:flex-start}#verdict{white-space:normal;width:100%}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.skip{transition:none}}
 </style>
 </head>
 <body>
+<a class="skip" href="#evidence">Skip to evidence identity</a>
 <header>
   <div class="brand">
     <h1><span class="glow">receipt-chain-live</span> · Khipu hash-chain verifier</h1>
     <div class="sub">SHA3-256 · schema szl.lake.receipt/v1 · re-verified in <span style="color:var(--proof)">your browser</span></div>
   </div>
-  <div id="verdict">⏳ fetching live lake…</div>
+  <div>
+    <div id="verdict" role="status" aria-live="polite">⏳ fetching live lake…</div>
+    <button class="refresh" id="refresh" type="button">Re-fetch and verify</button>
+  </div>
 </header>
 
 <main>
@@ -116,6 +135,16 @@
     <code>chain_hash</code>. Green means the chain is intact <i>as measured on your machine</i>,
     not as merely claimed by the server.
   </p>
+
+  <section class="identity" id="evidence" aria-label="Evidence identity and provenance">
+    <div><h2>Evidence identity</h2><p>The lake supplies receipt envelopes. This browser independently recomputes chain hashes and links; signatures, completeness, and decision truth remain outside this verifier.</p></div>
+    <div><dl>
+      <dt>runtime source</dt><dd>a11oy /api/lake/v1</dd>
+      <dt>measurement</dt><dd>local SHA3-256 recomputation</dd>
+      <dt>library</dt><dd>vendored js-sha3 0.8.0</dd>
+      <dt>failure</dt><dd>UNAVAILABLE; no cached chain</dd>
+    </dl></div>
+  </section>
 
   <div class="legend">
     <span class="tag meas">MEASURED — recomputed in your browser</span>
@@ -136,6 +165,11 @@
     Energy is <code>{"label":"UNAVAILABLE"}</code> unless a real NVML/joules reading exists — never fabricated.
     The Khipu chain is <b>Conjecture 2 (advisory BFT), not a proven theorem</b>; Λ remains Conjecture 1.
   </div>
+
+  <section class="paths" aria-label="Investor and evaluator paths">
+    <article class="path"><h2>Investor summary</h2><p>The differentiator is independently reproducible integrity: the browser checks published chain bytes rather than trusting a green server badge.</p><a href="https://a11oy.net" target="_blank" rel="noopener">Inspect the evidence index →</a></article>
+    <article class="path"><h2>Developer / evaluator path</h2><p>Record the Git revision, lake response, organ, and observation time, then use the end-to-end recipe for signer identity.</p><a href="https://github.com/szl-holdings/a11oy/blob/main/docs/cookbook/recipes/01-verify-a-receipt-end-to-end.md" target="_blank" rel="noopener">Run signature verification →</a></article>
+  </section>
 </main>
 
 <footer>
@@ -307,6 +341,7 @@
     return;
   }
   run();
+  document.getElementById("refresh").addEventListener("click", run);
 })();
 </script>
 </body>

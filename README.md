@@ -1,3 +1,15 @@
+---
+title: Receipt Chain Live
+emoji: 🔗
+colorFrom: green
+colorTo: gray
+sdk: static
+app_file: index.html
+pinned: false
+license: apache-2.0
+short_description: "SHA3-256 Khipu receipt chain, re-verified in your browser"
+---
+
 # receipt-chain-live
 
 **Live SHA3-256 Khipu hash-chain verifier — re-checked IN YOUR BROWSER, not merely claimed by a server.**

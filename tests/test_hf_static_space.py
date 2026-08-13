@@ -2371,19 +2371,44 @@ class WorkflowBoundaryTests(unittest.TestCase):
             },
         )
 
-    def test_attestation_downloads_reject_missing_producer_channels(self) -> None:
+    def test_attestation_downloads_follow_exact_channels_after_failed_producers(self) -> None:
         steps = {
             step["name"]: step
             for step in self.workflow["jobs"]["attest"]["steps"]
         }
-        self.assertEqual(
-            steps["Download exact publisher outcome"]["if"],
-            "needs.deploy.result == 'success' && needs.deploy.outputs.publication-artifact-name != ''",
-        )
-        self.assertEqual(
-            steps["Download exact public measurement"]["if"],
-            "needs.measure.result == 'success' && needs.measure.outputs.measurement-artifact-name != ''",
-        )
+        cases = {
+            "Download exact publisher outcome": (
+                "always() && needs.deploy.outputs.publication-artifact-name != ''",
+                "${{ needs.deploy.outputs.publication-artifact-name }}",
+            ),
+            "Download exact public measurement": (
+                "always() && needs.measure.outputs.measurement-artifact-name != ''",
+                "${{ needs.measure.outputs.measurement-artifact-name }}",
+            ),
+        }
+        for name, (condition, artifact_name) in cases.items():
+            with self.subTest(step=name):
+                step = steps[name]
+                self.assertEqual(step["if"], condition)
+                self.assertNotIn(".result", step["if"])
+                self.assertEqual(step["with"]["name"], artifact_name)
+
+    def test_attestation_downloads_never_fall_back_to_download_all(self) -> None:
+        steps = {
+            step["name"]: step
+            for step in self.workflow["jobs"]["attest"]["steps"]
+        }
+        for name in (
+            "Download exact publisher outcome",
+            "Download exact public measurement",
+        ):
+            with self.subTest(step=name):
+                step = steps[name]
+                self.assertEqual(set(step["with"]), {"name", "path"})
+                self.assertIn("outputs.", step["with"]["name"])
+                self.assertIn("!= ''", step["if"])
+                self.assertNotIn("pattern", step["with"])
+                self.assertNotIn("merge-multiple", step["with"])
 
     def test_publish_path_is_bound_without_an_unset_step_environment(self) -> None:
         steps = {
